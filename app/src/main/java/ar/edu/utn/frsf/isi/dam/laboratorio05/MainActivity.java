@@ -1,15 +1,25 @@
 package ar.edu.utn.frsf.isi.dam.laboratorio05;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 
 // AGREGAR en MapaFragment una interface MapaFragment.OnMapaListener con el método coordenadasSeleccionadas 
@@ -17,6 +27,7 @@ import com.google.android.gms.maps.GoogleMap;
 
 public class MainActivity extends AppCompatActivity implements FragmentManager.OnBackStackChangedListener,
         NuevoReclamoFragment.OnNuevoLugarListener, MapaFragment.OnMapaListener {
+
     private DrawerLayout drawerLayout;
     private NavigationView navView;
 
@@ -84,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
                                     bundle.putInt("tipo_mapa", GoogleMap.MAP_TYPE_HYBRID);
                                     fragment.setArguments(bundle);
                                 }
-                               fragmentTransaction = true;
+                                fragmentTransaction = true;
                                 break;
                         }
 
