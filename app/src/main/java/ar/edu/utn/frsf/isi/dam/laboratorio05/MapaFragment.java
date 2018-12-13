@@ -35,8 +35,11 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
 
     private OnMapaListener listener;
 
+
+
     public interface OnMapaListener {
-        public void coordenadasSeleccionadas();
+        public void obtenerCoordenadas();
+        public void coordenadasSeleccionadas(LatLng c);
     }
 
     public void setListener(OnMapaListener listener) {
@@ -44,6 +47,7 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
     }
     
     public MapaFragment() { }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup
             container, Bundle savedInstanceState) {
@@ -76,10 +80,27 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
         else{
             verificarPermisoMapa(getActivity());
         }
+
         // Add a marker in Sydney and move the camera
+
         LatLng sydney = new LatLng(-34, 151);
         miMapa.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         miMapa.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+        tipoMapaSeleccion(tipoMapa);
+    }
+
+    private void tipoMapaSeleccion(int tipoMapa) {
+        switch (tipoMapa) {
+            case 1:
+                miMapa.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                    @Override
+                    public void onMapLongClick(LatLng latLng) {
+                        listener.coordenadasSeleccionadas(latLng);
+                    }
+                });
+                break;
+        }
     }
 
     @Override
@@ -112,6 +133,8 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
             );
         }
     }
+
+
 }
 
 

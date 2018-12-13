@@ -172,10 +172,46 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
             // para que el usuario vea el mapa y con el click largo pueda acceder
             // a seleccionar la coordenada donde se registra el reclamo
             // configurar a la actividad como listener de los eventos del mapa ((MapaFragment) fragment).setListener(this);
+
+            // CREAR EL FRAGMENTO MAPA Y
+            // configurar el parametro “tipo_mapa” para que el fragmento del mapa
+            // sepa que debe configurar un listener de click largo
+            // y configurarle al fragmento del mapa que esta actividad implementará
+            // el listener
+            // PONERLO EN EL CONTENDOR PRINCIPAL
+
+            String tag= "mapaReclamos";
+            Fragment fragmentoMapa= null;
+            fragmentoMapa=getSupportFragmentManager().findFragmentByTag(tag);
+            if(fragmentoMapa==null){
+                fragmentoMapa= new MapaFragment();
+                ((MapaFragment) fragmentoMapa).setListener(this);
+            }
+            Bundle bundle= new Bundle();
+            bundle.putInt("tipo_mapa",1);
+            fragmentoMapa.setArguments(bundle);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.contenido, fragmentoMapa,tag)
+                    .commit();
+
         }
 
-    @Override
-    public void coordenadasSeleccionadas() {
 
+    @Override
+    public void coordenadasSeleccionadas(LatLng c) {
+        String tag = "nuevoReclamoFragment";
+        Fragment fragment =  getSupportFragmentManager().findFragmentByTag(tag);
+        if(fragment==null) {
+            fragment = new NuevoReclamoFragment();
+            ((NuevoReclamoFragment) fragment).setListener(MainActivity.this);
+        }
+        Bundle bundle = new Bundle();
+        bundle.putString("latLng",c.latitude + ";" + c.longitude);
+        fragment.setArguments(bundle);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.contenido, fragment,tag)
+                .commit();
     }
 }
