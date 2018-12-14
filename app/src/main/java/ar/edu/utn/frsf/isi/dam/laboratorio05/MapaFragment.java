@@ -4,6 +4,7 @@ package ar.edu.utn.frsf.isi.dam.laboratorio05;
 import android.Manifest;
 
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -22,6 +23,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -40,11 +43,13 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
 
     private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final int LISTA_RECLAMOS = 2;
+    private static final int RECLAMO = 3;
     private static String[] PERMISSIONS_MAPS = {Manifest.permission.ACCESS_FINE_LOCATION};
     private GoogleMap miMapa;
     private int tipoMapa=0;
     private ReclamoDao reclamoDao;
     private List<Reclamo> listaReclamos;
+    private Reclamo reclamo;
 
 
     private OnMapaListener listener;
@@ -129,6 +134,17 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
                 Thread thread= new Thread(hiloCargarReclamos);
                 thread.start();
                 break;
+            case 3:
+                Runnable hiloCargarReclamo=(new Runnable() {
+                    @Override
+                    public void run() {
+                        reclamo=reclamoDao.getById(getArguments().getInt("idReclamo"));
+                        Message completeMessage= handler.obtainMessage(RECLAMO);
+                        completeMessage.sendToTarget();
+                    }
+                });
+                Thread thread2= new Thread(hiloCargarReclamo);
+                thread2.start();
         }
     }
 
@@ -182,6 +198,18 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
                     for(MarkerOptions markerOptions: marcadores) builder.include(markerOptions.getPosition());
                     LatLngBounds bounds= builder.build();
                     cu= CameraUpdateFactory.newLatLngBounds(bounds, 0);
+                    miMapa.moveCamera(cu);
+                    break;
+                case RECLAMO:
+                    latLng= new LatLng(reclamo.getLatitud(), reclamo.getLongitud());
+                    miMapa.addMarker(new MarkerOptions().position(latLng));
+                    Circle circulo= miMapa.addCircle(new CircleOptions()
+                            .center(latLng)
+                            .radius(500)
+                            .strokeColor(Color.RED)
+                            .fillColor(0x220000FF)
+                            .strokeWidth(5));
+                    cu= CameraUpdateFactory.newLatLngZoom(latLng, 15.0f);
                     miMapa.moveCamera(cu);
                     break;
 
