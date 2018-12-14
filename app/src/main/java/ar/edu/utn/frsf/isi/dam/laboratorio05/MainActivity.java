@@ -90,10 +90,11 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
 
                                 if(fragment == null){
                                     fragment = new MapaFragment();
-                                    ((MapaFragment) fragment).setListener(MainActivity.this);Bundle bundle = new Bundle();
 
-                                    bundle.putInt("tipo_mapa", GoogleMap.MAP_TYPE_HYBRID);
+                                    Bundle bundle = new Bundle();
+                                    bundle.putInt("tipo_mapa", 2);
                                     fragment.setArguments(bundle);
+                                    ((MapaFragment) fragment).setListener(MainActivity.this);
                                 }
                                 fragmentTransaction = true;
                                 break;
