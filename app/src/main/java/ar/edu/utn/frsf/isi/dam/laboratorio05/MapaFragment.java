@@ -28,6 +28,10 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.gms.maps.model.TileProvider;
+import com.google.maps.android.heatmaps.HeatmapTileProvider;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +48,7 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
     private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final int LISTA_RECLAMOS = 2;
     private static final int RECLAMO = 3;
+    private static final int HEATMAP = 4;
     private static String[] PERMISSIONS_MAPS = {Manifest.permission.ACCESS_FINE_LOCATION};
     private GoogleMap miMapa;
     private int tipoMapa=0;
@@ -145,6 +150,21 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
                 });
                 Thread thread2= new Thread(hiloCargarReclamo);
                 thread2.start();
+                break;
+            case 4:
+                Runnable hiloCargarReclamos2=new Runnable() {
+                    @Override
+                    public void run() {
+                        listaReclamos.clear();
+                        listaReclamos.addAll(reclamoDao.getAll());
+                        Message completeMessage= handler.obtainMessage(HEATMAP);
+                        completeMessage.sendToTarget();
+                    }
+                };
+                Thread thread3= new Thread(hiloCargarReclamos2);
+                thread3.start();
+                break;
+
         }
     }
 
@@ -212,7 +232,25 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
                     cu= CameraUpdateFactory.newLatLngZoom(latLng, 15.0f);
                     miMapa.moveCamera(cu);
                     break;
+                case HEATMAP:
+                    ArrayList<LatLng>listaCoordenadas = new ArrayList<>();
+                    LatLngBounds.Builder builder2= new LatLngBounds.Builder();
+                    for(int i=0; listaReclamos.size()>i; i++){
+                        latLng= new LatLng(listaReclamos.get(i).getLatitud(),
+                                listaReclamos.get(i).getLongitud());
+                        listaCoordenadas.add(latLng);
+                        builder2.include(latLng);
+                    }
 
+                    TileProvider mProvider = new HeatmapTileProvider
+                            .Builder()
+                            .data(listaCoordenadas)
+                            .build();
+                    miMapa.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+                    LatLngBounds latLngBounds= builder2.build();
+                    cu= CameraUpdateFactory.newLatLngBounds(latLngBounds, 0);
+                    miMapa.moveCamera(cu);
+                    break;
             }
         }
     };
