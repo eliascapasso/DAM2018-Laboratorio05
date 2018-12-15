@@ -26,7 +26,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 // IMPLEMENTAR dicho método en esta actividad.
 
 public class MainActivity extends AppCompatActivity implements FragmentManager.OnBackStackChangedListener,
-        NuevoReclamoFragment.OnNuevoLugarListener, MapaFragment.OnMapaListener {
+        NuevoReclamoFragment.OnNuevoLugarListener, MapaFragment.OnMapaListener, FormularioBuscarFragment.OnFormularioBuscarListener {
 
     private DrawerLayout drawerLayout;
     private NavigationView navView;
@@ -107,6 +107,15 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
                                 }
                                 fragmentTransaction = true;
                                 break;
+                            case R.id.optFormularioBusqueda:
+                                tag="formularioBuscarFragment";
+                                fragment= getSupportFragmentManager().findFragmentByTag(tag);
+                                if(fragment==null){
+                                    fragment= new FormularioBuscarFragment();
+                                    ((FormularioBuscarFragment) fragment).setListener(MainActivity.this);
+                                }
+                                fragmentTransaction=true;
+                                break;
                         }
 
                         if(fragmentTransaction) {
@@ -127,6 +136,29 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
                     }
                 });
     }
+
+
+    // para interface OnFormularioBuscarListener de la clase FormmularioBuscarFragment
+    @Override
+    public void buscarReclamo(String tipo){
+        String tag= "mapaReclamos";
+        Fragment fragment= getSupportFragmentManager().findFragmentByTag(tag);
+        if(fragment==null){
+            fragment= new MapaFragment();
+            ((MapaFragment) fragment).setListener(this);
+        }
+        Bundle bundle= new Bundle();
+        bundle.putInt("tipo_mapa", 5);
+        bundle.putString("tipo_reclamo", tipo);
+        fragment.setArguments(bundle);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.contenido, fragment)
+                .commit();
+
+    }
+
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {

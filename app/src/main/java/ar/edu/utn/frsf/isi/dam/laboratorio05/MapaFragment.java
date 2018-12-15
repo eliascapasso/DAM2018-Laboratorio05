@@ -28,6 +28,7 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.google.android.gms.maps.model.TileProvider;
 import com.google.maps.android.heatmaps.HeatmapTileProvider;
@@ -49,6 +50,7 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
     private static final int LISTA_RECLAMOS = 2;
     private static final int RECLAMO = 3;
     private static final int HEATMAP = 4;
+    private static final int TIPO_RECLAMO = 5;
     private static String[] PERMISSIONS_MAPS = {Manifest.permission.ACCESS_FINE_LOCATION};
     private GoogleMap miMapa;
     private int tipoMapa=0;
@@ -164,7 +166,20 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
                 Thread thread3= new Thread(hiloCargarReclamos2);
                 thread3.start();
                 break;
-
+            case 5:
+                Runnable tipoReclamos= new Runnable() {
+                    @Override
+                    public void run() {
+                        listaReclamos.clear();
+                        listaReclamos.addAll(reclamoDao.getByTipo(getArguments().getString("tipo_reclamo")));
+                        if(!listaReclamos.isEmpty()){
+                            Message completeMessage= handler.obtainMessage(TIPO_RECLAMO);
+                            completeMessage.sendToTarget();}
+                    }
+                };
+                Thread thread4= new Thread(tipoReclamos);
+                thread4.start();
+                break;
         }
     }
 
@@ -249,6 +264,23 @@ public class MapaFragment  extends SupportMapFragment implements OnMapReadyCallb
                     miMapa.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
                     LatLngBounds latLngBounds= builder2.build();
                     cu= CameraUpdateFactory.newLatLngBounds(latLngBounds, 0);
+                    miMapa.moveCamera(cu);
+                    break;
+                case TIPO_RECLAMO:
+                    ArrayList<LatLng> coordenadas= new ArrayList<>();
+                    LatLngBounds.Builder builder3= new LatLngBounds.Builder();
+                    PolylineOptions polOpt= new PolylineOptions();
+
+                    for(int i=0; listaReclamos.size()>i; i++){
+                        latLng= new LatLng(listaReclamos.get(i).getLatitud(), listaReclamos.get(i).getLongitud());
+                        miMapa.addMarker(new MarkerOptions().position(latLng));
+                        coordenadas.add(latLng);
+                        builder3.include(latLng);
+                        polOpt.add(latLng);
+                    }
+                    miMapa.addPolyline(polOpt.color(Color.RED).width(7));
+                    LatLngBounds latLngBounds1= builder3.build();
+                    cu= CameraUpdateFactory.newLatLngBounds(latLngBounds1, 0);
                     miMapa.moveCamera(cu);
                     break;
             }
