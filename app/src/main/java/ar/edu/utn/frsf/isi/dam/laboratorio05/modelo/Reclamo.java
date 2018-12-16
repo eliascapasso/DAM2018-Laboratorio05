@@ -4,10 +4,10 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.TypeConverters;
 
+import java.io.File;
+
 @Entity
 public class Reclamo {
-
-
     public enum TipoReclamo { VEREDAS,SEMAFOROS,ILUMINACION,CALLE_EN_MAL_ESTADO,RESIDUOS,RUIDOS_MOLESTOS,OTRO}
 
     @PrimaryKey(autoGenerate = true)
@@ -16,8 +16,18 @@ public class Reclamo {
     private Double longitud;
     private String reclamo;
     private String email;
+    private String pathFotoReclamo;
+
     @TypeConverters(TipoReclamoConverter.class)
     private TipoReclamo tipo;
+
+    public String getPathFotoReclamo() {
+        return pathFotoReclamo;
+    }
+
+    public void setPathFotoReclamo(String pathFotoReclamo) {
+        this.pathFotoReclamo = pathFotoReclamo;
+    }
 
     public Double getLatitud() {
         return latitud;

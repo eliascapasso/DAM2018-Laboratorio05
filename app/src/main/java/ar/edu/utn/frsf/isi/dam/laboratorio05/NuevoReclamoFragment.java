@@ -1,22 +1,34 @@
 package ar.edu.utn.frsf.isi.dam.laboratorio05;
 
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.FileProvider;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import ar.edu.utn.frsf.isi.dam.laboratorio05.modelo.MyDatabase;
 import ar.edu.utn.frsf.isi.dam.laboratorio05.modelo.Reclamo;
 import ar.edu.utn.frsf.isi.dam.laboratorio05.modelo.ReclamoDao;
+
+import static android.app.Activity.RESULT_OK;
 
 public class NuevoReclamoFragment extends Fragment {
 
@@ -37,6 +49,14 @@ public class NuevoReclamoFragment extends Fragment {
     private TextView tvCoord;
     private Button buscarCoord;
     private Button btnGuardar;
+    private Button btnFotoReclamo;
+    private ImageView ivFotoReclamo;
+
+    File pathFoto = null;
+
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+    static final int REQUEST_IMAGE_SAVE = 2;
+
     private OnNuevoLugarListener listener;
 
     private ArrayAdapter<Reclamo.TipoReclamo> tipoReclamoAdapter;
@@ -58,6 +78,8 @@ public class NuevoReclamoFragment extends Fragment {
         tvCoord= (TextView) v.findViewById(R.id.reclamo_coord);
         buscarCoord= (Button) v.findViewById(R.id.btnBuscarCoordenadas);
         btnGuardar= (Button) v.findViewById(R.id.btnGuardar);
+        btnFotoReclamo = (Button)v.findViewById(R.id.btnFotoReclamo);
+        ivFotoReclamo = (ImageView) v.findViewById(R.id.ivFotoReclamo);
 
         tipoReclamoAdapter = new ArrayAdapter<Reclamo.TipoReclamo>(getActivity(),android.R.layout.simple_spinner_item,Reclamo.TipoReclamo.values());
         tipoReclamoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -89,6 +111,16 @@ public class NuevoReclamoFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 saveOrUpdateReclamo();
+            }
+        });
+
+        btnFotoReclamo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if(takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null){
+                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                }
             }
         });
         return v;
@@ -137,6 +169,10 @@ public class NuevoReclamoFragment extends Fragment {
             reclamoActual.setLatitud(Double.valueOf(coordenadas[0]));
             reclamoActual.setLongitud(Double.valueOf(coordenadas[1]));
         }
+        if(pathFoto != null){
+            reclamoActual.setPathFotoReclamo(String.valueOf(pathFoto));
+        }
+
         Runnable hiloActualizacion = new Runnable() {
             @Override
             public void run() {
@@ -159,5 +195,61 @@ public class NuevoReclamoFragment extends Fragment {
         t1.start();
     }
 
+    private File createImageFile() throws IOException{
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
+                                .format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File dir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,
+                ".jpg",
+                dir);
 
+        pathFoto = image.getAbsoluteFile();
+
+        return image;
+    }
+
+    private void sacarGuardarFoto(){
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if(takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null){
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            }catch (IOException ex){
+                ex.printStackTrace();
+            }
+
+            if (photoFile != null){
+                Uri photoURI = FileProvider.getUriForFile(getContext(),
+                        "com.example.android.fileprovider",
+                        photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_SAVE);
+            }
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        if(requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK){
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            ivFotoReclamo.setImageBitmap(imageBitmap);
+        }
+        if(requestCode == REQUEST_IMAGE_SAVE && resultCode == RESULT_OK){
+            File file = new File(String.valueOf(pathFoto));
+            Bitmap imageBitmap = null;
+            try{
+                imageBitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(),
+                        Uri.fromFile(file));
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+
+            if (imageBitmap != null){
+                ivFotoReclamo.setImageBitmap(imageBitmap);
+            }
+        }
+    }
 }
