@@ -1,14 +1,22 @@
 package ar.edu.utn.frsf.isi.dam.laboratorio05;
 
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +36,7 @@ import ar.edu.utn.frsf.isi.dam.laboratorio05.modelo.MyDatabase;
 import ar.edu.utn.frsf.isi.dam.laboratorio05.modelo.Reclamo;
 import ar.edu.utn.frsf.isi.dam.laboratorio05.modelo.ReclamoDao;
 
+import static android.Manifest.permission.RECORD_AUDIO;
 import static android.app.Activity.RESULT_OK;
 
 public class NuevoReclamoFragment extends Fragment {
@@ -51,6 +60,15 @@ public class NuevoReclamoFragment extends Fragment {
     private Button btnGuardar;
     private Button btnFotoReclamo;
     private ImageView ivFotoReclamo;
+    private Button btnGrabarAudio;
+    private Button btnReproducirAudio;
+
+    private static final String LOG_TAG = "AudioRecordTest ";
+    private MediaRecorder mRecorder = null ;
+    private MediaPlayer mPlayer = null ;
+    private String mFileName ;
+    private Boolean grabando = false ;
+    private Boolean reproduciendo = false ;
 
     File pathFoto = null;
 
@@ -72,14 +90,58 @@ public class NuevoReclamoFragment extends Fragment {
 
         View v = inflater.inflate(R.layout.fragment_nuevo_reclamo, container, false);
 
+        mFileName = Environment.getExternalStorageDirectory()
+                .getAbsolutePath() + "/audiorecordtest.3gp";
+
+        View.OnClickListener listenerPlayer = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switch (view.getId()) {
+                    case R.id.btnReproducirAudio:
+                        if (reproduciendo) {
+                            ((Button) view).setText("Reproducir");
+                            reproduciendo = false;
+                            terminarReproducir();
+                        } else {
+                            ((Button) view).setText("pausar.....");
+                        }
+
+                        reproduciendo = true;
+                        reproducir();
+                        break;
+                    case R.id.btnAgregarAudio:
+                        if (grabando) {
+                            ((Button) view).setText("Grabar");
+                            grabando = false;
+                            terminarGrabar();
+                        } else {
+                            ((Button) view).setText("grabando.....");
+                        }
+
+                        grabando = true;
+
+                        verificarSolicitarPermisoParaGrabar();
+
+                        grabar();
+                        break;
+                }
+            }
+        };
+
         reclamoDesc = (EditText) v.findViewById(R.id.reclamo_desc);
         mail= (EditText) v.findViewById(R.id.reclamo_mail);
         tipoReclamo= (Spinner) v.findViewById(R.id.reclamo_tipo);
         tvCoord= (TextView) v.findViewById(R.id.reclamo_coord);
         buscarCoord= (Button) v.findViewById(R.id.btnBuscarCoordenadas);
         btnGuardar= (Button) v.findViewById(R.id.btnGuardar);
-        btnFotoReclamo = (Button)v.findViewById(R.id.btnFotoReclamo);
+        btnFotoReclamo = (Button)v.findViewById(R.id.btnAgregarFoto);
         ivFotoReclamo = (ImageView) v.findViewById(R.id.ivFotoReclamo);
+        btnGrabarAudio = (Button) v.findViewById(R.id.btnAgregarAudio);
+        btnReproducirAudio = (Button) v.findViewById(R.id.btnReproducirAudio);
+
+        btnGrabarAudio.setOnClickListener (listenerPlayer );
+        btnReproducirAudio.setOnClickListener (listenerPlayer );
+
 
         tipoReclamoAdapter = new ArrayAdapter<Reclamo.TipoReclamo>(getActivity(),android.R.layout.simple_spinner_item,Reclamo.TipoReclamo.values());
         tipoReclamoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -124,6 +186,60 @@ public class NuevoReclamoFragment extends Fragment {
             }
         });
         return v;
+    }
+
+    private void verificarSolicitarPermisoParaGrabar(){
+        boolean permitido = true;
+
+        if(Build.VERSION. SDK_INT >= Build.VERSION_CODES. M) {
+            if (ContextCompat. checkSelfPermission (getContext() , RECORD_AUDIO ) != PackageManager. PERMISSION_GRANTED ) {
+                permitido = false;
+            }
+        }
+
+        if(permitido){
+            if(ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), RECORD_AUDIO)){
+
+            }else{
+                ActivityCompat.requestPermissions(getActivity(), new String[]{RECORD_AUDIO}, 0);
+            }
+        }
+    }
+
+    private void grabar() {
+        mRecorder = new MediaRecorder ();
+        mRecorder .setAudioSource (MediaRecorder.AudioSource. MIC );
+        mRecorder .setOutputFormat (MediaRecorder.OutputFormat. THREE_GPP );
+        mRecorder .setOutputFile (mFileName );
+        mRecorder .setAudioEncoder (MediaRecorder.AudioEncoder. AMR_NB );
+        try {mRecorder .prepare ();
+        } catch (IOException e) {
+            Log. e(LOG_TAG , "prepare() failed ");
+        }
+
+        mRecorder .start ();
+    }
+
+    private void terminarGrabar () {
+        mRecorder .stop ();
+        mRecorder .release ();
+        mRecorder = null ;
+    }
+
+    private void reproducir(){
+        mPlayer = new MediaPlayer();
+        try{
+            mPlayer.setDataSource(mFileName);
+            mPlayer.prepare();
+            mPlayer.start();
+        }catch (IOException e){
+            Log.e(LOG_TAG, "prepare() failed");
+        }
+    }
+
+    private void terminarReproducir(){
+        mPlayer.release();
+        mPlayer = null;
     }
 
     private void cargarReclamo(final int id){
