@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -44,10 +45,24 @@
         android:text="Tipo de reclamo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <ImageView
+        android:id="@+id/ivFotoReclamo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/common_google_signin_btn_icon_dark_normal_background" />
+
     <Spinner
         android:id="@+id/reclamo_tipo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"></Spinner>
+
+    <Button
+        android:id="@+id/btnFotoReclamo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Agregar foto" />
+
     <Button
         android:id="@+id/btnGuardar"
         android:text="Guardar"
