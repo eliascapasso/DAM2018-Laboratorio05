@@ -62,6 +62,7 @@ public class NuevoReclamoFragment extends Fragment {
     private ImageView ivFotoReclamo;
     private Button btnGrabarAudio;
     private Button btnReproducirAudio;
+    private Button btnDetenerGrabarAudio;
 
     private static final String LOG_TAG = "AudioRecordTest ";
     private MediaRecorder mRecorder = null ;
@@ -71,6 +72,7 @@ public class NuevoReclamoFragment extends Fragment {
     private Boolean reproduciendo = false ;
 
     File pathFoto = null;
+    File pathAudio = null;
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_IMAGE_SAVE = 2;
@@ -138,10 +140,7 @@ public class NuevoReclamoFragment extends Fragment {
         ivFotoReclamo = (ImageView) v.findViewById(R.id.ivFotoReclamo);
         btnGrabarAudio = (Button) v.findViewById(R.id.btnAgregarAudio);
         btnReproducirAudio = (Button) v.findViewById(R.id.btnReproducirAudio);
-
-        btnGrabarAudio.setOnClickListener (listenerPlayer );
-        btnReproducirAudio.setOnClickListener (listenerPlayer );
-
+        btnDetenerGrabarAudio = (Button) v.findViewById(R.id.btnDetenerGrabarAudio);
 
         tipoReclamoAdapter = new ArrayAdapter<Reclamo.TipoReclamo>(getActivity(),android.R.layout.simple_spinner_item,Reclamo.TipoReclamo.values());
         tipoReclamoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -185,6 +184,85 @@ public class NuevoReclamoFragment extends Fragment {
                 }
             }
         });
+
+        btnGrabarAudio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (ContextCompat.checkSelfPermission(getActivity(),
+                            Manifest.permission.RECORD_AUDIO)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.RECORD_AUDIO}, 2);
+
+                    } else {
+                        grabar();
+                    }
+                }
+            }
+        });
+
+        btnDetenerGrabarAudio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mRecorder.stop();
+                mRecorder.release();
+                mRecorder = null;
+                btnGrabarAudio.setEnabled(true);
+                btnReproducirAudio.setEnabled(true);
+                btnDetenerGrabarAudio.setEnabled(false);
+                buscarCoord.setEnabled(true);
+                String tipo = tipoReclamo.getSelectedItem().toString();
+                if(!tipo.equals(Reclamo.TipoReclamo.VEREDAS.toString()) && !tipo.equals(Reclamo.TipoReclamo.CALLE_EN_MAL_ESTADO.toString()))
+                {
+                    btnGuardar.setEnabled(true);
+                }
+            }
+        });
+
+        btnReproducirAudio.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                btnGrabarAudio.setEnabled(false);
+                btnDetenerGrabarAudio.setEnabled(false);
+                btnReproducirAudio.setEnabled(true);
+                buscarCoord.setEnabled(false);
+                if(!reproduciendo){
+                    reproduciendo = true;
+                    mPlayer = new MediaPlayer();
+                    try {
+                        mPlayer.setDataSource(reclamoActual.getPathAudioReclamo());
+                        mPlayer.prepare();
+                        mPlayer.start();
+                        mPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                            @Override
+                            public void onCompletion(MediaPlayer mp) {
+                                mPlayer.release();
+                                mPlayer = null;
+                                reproduciendo = false;
+                                btnReproducirAudio.setText("REPRODUCIR");
+                                btnGrabarAudio.setEnabled(true);
+                                btnDetenerGrabarAudio.setEnabled(false);
+                                btnReproducirAudio.setEnabled(true);
+                                buscarCoord.setEnabled(true);
+                            }
+                        });
+                    } catch (IOException e) {
+                        Log.e("AudioRecordTest", "prepare() failed");
+                    }
+                    btnReproducirAudio.setText("STOP");
+
+                }else{
+                    mPlayer.release();
+                    mPlayer = null;
+                    reproduciendo = false;
+                    btnReproducirAudio.setText("REPRODUCIR");
+                    btnGrabarAudio.setEnabled(true);
+                    btnReproducirAudio.setEnabled(true);
+                    btnDetenerGrabarAudio.setEnabled(false);
+                    buscarCoord.setEnabled(true);
+                }
+            }
+        });
         return v;
     }
 
@@ -207,17 +285,27 @@ public class NuevoReclamoFragment extends Fragment {
     }
 
     private void grabar() {
-        mRecorder = new MediaRecorder ();
-        mRecorder .setAudioSource (MediaRecorder.AudioSource. MIC );
-        mRecorder .setOutputFormat (MediaRecorder.OutputFormat. THREE_GPP );
-        mRecorder .setOutputFile (mFileName );
-        mRecorder .setAudioEncoder (MediaRecorder.AudioEncoder. AMR_NB );
-        try {mRecorder .prepare ();
+        btnGrabarAudio.setEnabled(false);
+        btnReproducirAudio.setEnabled(false);
+        btnGuardar.setEnabled(false);
+        btnDetenerGrabarAudio.setEnabled(true);
+        buscarCoord.setEnabled(false);
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        try {
+            createAudioFile();
         } catch (IOException e) {
-            Log. e(LOG_TAG , "prepare() failed ");
+            e.printStackTrace();
         }
-
-        mRecorder .start ();
+        mRecorder.setOutputFile(reclamoActual.getPathAudioReclamo());
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        try {
+            mRecorder.prepare();
+        } catch (IOException e) {
+            Log.e("AudioRecordTest", "prepare() failed");
+        }
+        mRecorder.start();
     }
 
     private void terminarGrabar () {
@@ -293,6 +381,19 @@ public class NuevoReclamoFragment extends Fragment {
             @Override
             public void run() {
 
+                if((String.valueOf(pathFoto) != reclamoActual.getPathFotoReclamo()) && (String.valueOf(pathFoto) != null))
+                {
+                    File file = new File(String.valueOf(pathFoto));
+                    if(file.delete()) System.out.println("Foto borrada");
+                    else System.out.println("No se pudo borrar la foto");
+                }
+                if(String.valueOf(pathAudio)!=reclamoActual.getPathAudioReclamo() && String.valueOf(pathAudio)!=null)
+                {
+                    File file = new File(String.valueOf(pathAudio));
+                    if(file.delete()) System.out.println("Audio borrado");
+                    else System.out.println("No se pudo borrar el audio");
+                }
+
                 if(reclamoActual.getId()>0) reclamoDao.update(reclamoActual);
                 else reclamoDao.insert(reclamoActual);
                 getActivity().runOnUiThread(new Runnable() {
@@ -324,6 +425,20 @@ public class NuevoReclamoFragment extends Fragment {
         pathFoto = image.getAbsoluteFile();
 
         return image;
+    }
+
+    private File createAudioFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
+                .format(new Date());
+        String audioFileName = "3GP_" + timeStamp + "_";
+        File dir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File audio = File.createTempFile(
+                audioFileName, /* prefix */
+                ".3gp", /* suffix */
+                dir /* directory */
+        );
+        reclamoActual.setPathAudioReclamo(audio.getAbsolutePath());
+        return audio;
     }
 
     private void sacarGuardarFoto(){

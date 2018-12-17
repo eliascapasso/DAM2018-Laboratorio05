@@ -70,6 +70,12 @@
         android:text="Grabar audio" />
 
     <Button
+        android:id="@+id/btnDetenerGrabarAudio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Detener grabar" />
+
+    <Button
         android:id="@+id/btnReproducirAudio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
