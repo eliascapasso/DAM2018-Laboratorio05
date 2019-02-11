@@ -182,10 +182,7 @@ public class NuevoReclamoFragment extends Fragment {
         btnFotoReclamo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                if(takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null){
-                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-                }
+                sacarGuardarFoto();
             }
         });
 
