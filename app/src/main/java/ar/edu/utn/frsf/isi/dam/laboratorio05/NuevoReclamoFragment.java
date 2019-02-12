@@ -182,7 +182,34 @@ public class NuevoReclamoFragment extends Fragment {
         btnFotoReclamo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sacarGuardarFoto();
+                if (ContextCompat.checkSelfPermission(getActivity(),
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(getContext(),
+                        Manifest.permission.CAMERA)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+                    } else {
+                        ActivityCompat.requestPermissions(getActivity(),
+                                new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                                225);
+                    }
+
+
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
+                            Manifest.permission.CAMERA)) {
+
+                    } else {
+                        ActivityCompat.requestPermissions(getActivity(),
+                                new String[]{Manifest.permission.CAMERA},
+                                226);
+                    }
+                } else {
+                    sacarGuardarFoto();
+                }
             }
         });
 
@@ -490,7 +517,7 @@ public class NuevoReclamoFragment extends Fragment {
                         "com.example.android.fileprovider",
                         photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                startActivityForResult(takePictureIntent, REQUEST_IMAGE_SAVE);
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
             }
         }
     }
@@ -498,13 +525,17 @@ public class NuevoReclamoFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            File file = new File(pathFoto.getAbsolutePath());
+            Bitmap imageBitmap = null;
+            try {
+                imageBitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), Uri.fromFile(file));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             ivFotoReclamo.setImageBitmap(imageBitmap);
         }
         if (requestCode == REQUEST_IMAGE_SAVE && resultCode == Activity.RESULT_OK) {
-
-
             Bitmap imageBitmap = null;
             try {
                 File file = new File(reclamoActual.getPathFotoReclamo());
